@@ -1,4 +1,4 @@
-{-# OPTIONS_GHC -cpp -XExistentialQuantification -XDeriveDataTypeable #-}
+{-# OPTIONS_GHC -cpp -XExistentialQuantification -XDeriveDataTypeable -XOverloadedStrings #-}
 --------------------------------------------------------------------
 -- |
 -- Module      : MediaWiki.API
@@ -29,6 +29,7 @@ import MediaWiki.API.Query.SiteInfo.Import as SI
 import MediaWiki.API.Action.Login.Import as Login
 
 import Data.Maybe
+import Data.Text (unpack)
 
 import Control.Exception as CE
 import Data.Typeable
@@ -55,7 +56,7 @@ webPost mbUser url act req = do
      postContentsURL mbUser
                   url_q
                   [ ("Content-Length", show $ length pload)
-		  , ("Content-Type",   showMIMEType form_mime_ty)
+		  , ("Content-Type",   unpack $ showMIMEType form_mime_ty)
 		  ]
 		  [{-no cookies..-}]
 		  pload
