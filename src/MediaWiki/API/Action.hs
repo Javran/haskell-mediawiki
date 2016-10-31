@@ -41,6 +41,10 @@ module MediaWiki.API.Action
   ) where
 
 import Data.Default
+import Text.XML.Light.Types
+import Text.XML.Light.Proc ( strContent )
+import Control.Monad
+import Data.Maybe
 
 import MediaWiki.API.Types
 import MediaWiki.API.Utils
@@ -215,6 +219,39 @@ data LoginResponse
     , lgSession :: UserSession
     }
 
+instance FromXml LoginResponse where
+    fromXml e = do
+        guard (elName e == nsName "api")
+        let es1 = children e
+        p <- pNode "login" es1
+        let res = pAttr "result" p
+            uid = pAttr "lguserid" p
+            unm = pAttr "lgusername" p
+            tok = pAttr "lgtoken" p
+            coo = pAttr "cookieprefix" p
+            ses = pAttr "sessionid" p
+        case res of
+            Nothing -> fail "missing 'result' api attribute"
+            Just "Success" ->
+                return LoginResponse{ lgSuccess=True
+                                    , lgSession=UserSession
+                                         { sessUserId    = fromMaybe "" uid
+                                         , sessUserName  = fromMaybe "" unm
+                                         , sessPassword  = Nothing
+                                         , sessCookiePrefix = coo
+                                         , sessSessionId = ses
+                                         , sessToken     =  fromMaybe "" tok
+                                         }}
+            Just x -> do
+                let det = pAttr "details" p
+                let wai = pAttr "wait" p
+                return LoginError
+                    { lgSuccess = False
+                    , lgeError  = x
+                    , lgeDetails = det
+                    , lgeWait   = fromMaybe "" wai
+                    }
+
 data ParamInfoRequest
   = ParamInfoRequest
     { paModules      :: [String]
@@ -372,6 +409,79 @@ instance Default ParseResponse where
         , parSections      = Nothing
         }
 
+
+instance FromXml ParseResponse where
+    fromXml e = do
+          guard (elName e == nsName "api")
+          let es1 = children e
+          p  <- pNode "parse" es1
+          let es = children p
+              txt = fromMaybe "" (pNode "text" es >>= return.strContent)
+              rev = pAttr "revid" p
+              ll  = fmap (mapMaybe xmlLL) (fmap children $ pNode "langlinks" es)
+              ca  = fmap (mapMaybe xmlCat) (fmap children $ pNode "categories" es)
+              li  = fmap (mapMaybe xmlLi) (fmap children $ pNode "links" es)
+              te  = fmap (mapMaybe xmlTe) (fmap children $ pNode "templates" es)
+              im  = fmap (mapMaybe xmlIm) (fmap children $ pNode "images" es)
+              ex  = fmap (mapMaybe xmlEx) (fmap children $ pNode "externallinks" es)
+              se  = fmap (mapMaybe xmlSe) (fmap children $ pNode "sections" es)
+          return def
+              { parText = txt
+              , parRevId = rev
+              , parLangLinks = ll
+              , parCategories = ca
+              , parLinks = li
+              , parTemplates = te
+              , parImages = im
+              , parExternalLinks = ex
+              , parSections = se
+              }
+      where
+        xmlLL :: Element -> Maybe LanguageLink
+        xmlLL e = do
+            guard (elName e == nsName "ll")
+            let lng    = fromMaybe "en"  $ pAttr "lang" e
+            return LanguageLink{laLang=lng,laLink=strContent e}
+
+        xmlCat :: Element -> Maybe CategoryLink
+        xmlCat e = do
+            guard (elName e == nsName "cl")
+            let sk    = fromMaybe ""  $ pAttr "sortkey" e
+            return CategoryLink{caSortKey=sk,caLink=strContent e}
+
+        xmlLi :: Element -> Maybe Link
+        xmlLi e = do
+            guard (elName e == nsName "pl")
+            let ex   = isJust (pAttr "exists" e)
+            let ns   = fromMaybe mainNamespace $ pAttr "ns" e
+            return Link{liNamespace=ns,liExists=ex,liLink=strContent e}
+
+        xmlTe :: Element -> Maybe Link
+        xmlTe e = do
+            guard (elName e == nsName "tl")
+            let ex   = isJust (pAttr "exists" e)
+            let ns   = fromMaybe mainNamespace $ pAttr "ns" e
+            return Link{liNamespace=ns,liExists=ex,liLink=strContent e}
+
+        xmlIm :: Element -> Maybe URLString
+        xmlIm e = do
+            guard (elName e == nsName "img")
+            return (strContent e)
+
+        xmlEx :: Element -> Maybe URLString
+        xmlEx e = do
+            guard (elName e == nsName "el")
+            return (strContent e)
+
+        xmlSe :: Element -> Maybe TOCSection
+        xmlSe e = do
+            guard (elName e == nsName "s")
+            let tlev = fromMaybe 0 $ pAttr "toclevel" e >>= readMb
+            let lev = fromMaybe 0 $ pAttr "level" e >>= readMb
+            let lin = fromMaybe "" $ pAttr "line" e
+            let num = fromMaybe "" $ pAttr "number" e
+            return TOCSection{tocTocLevel=tlev,tocLevel=lev,tocLine=lin,tocNumber=num}
+
 data LanguageLink
   = LanguageLink
     { laLang  :: String
@@ -481,6 +591,17 @@ instance Default ExpandTemplatesResponse where
         { etExpandedText  = ""
         , etExpandedXml   = Nothing
         }
+
+instance FromXml ExpandTemplatesResponse where
+    fromXml e = do
+        guard (elName e == nsName "api")
+        let es1 = children e
+        p  <- pNode "expandtemplates" es1
+        let xm = strContent <$> pNode "parsetree" es1
+        return def
+            { etExpandedText = strContent p
+            , etExpandedXml  = xm
+            }
 
 -- 1.12+ and later
 data SitematrixRequest

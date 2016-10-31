@@ -88,10 +88,7 @@ library
                      MediaWiki.API.Query.Users,
                      MediaWiki.API.Query.Users.Import,
                      MediaWiki.API.Query.WatchList,
-                     MediaWiki.API.Query.WatchList.Import,
-                     MediaWiki.API.Action.Login.Import,
-                     MediaWiki.API.Action.Parse.Import,
-                     MediaWiki.API.Action.ExpandTemplates.Import
+                     MediaWiki.API.Query.WatchList.Import
                    , MediaWiki.API.Action
                      MediaWiki.Util.Fetch,
                      MediaWiki.Util.Codec.Percent,

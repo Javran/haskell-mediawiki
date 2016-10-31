@@ -14,6 +14,9 @@
 --------------------------------------------------------------------
 module MediaWiki.API.Types where
 
+import Text.XML.Light.Types
+import MediaWiki.API.Utils
+
 -- base types
 type UserName = String
 type NamespaceID = String
@@ -197,6 +200,10 @@ class APIRequest a where
   queryKind :: a -> QueryKind
   queryKind _ = QProp ""
 
+class FromXml a where
+    fromXml :: Element -> Maybe a
+    fromStringXml :: String -> Either (String,[{-Error msg-}String]) a
+    fromStringXml = parseDoc fromXml
 
 data QueryKind
  = QProp String | QMeta String | QList String | QGen String

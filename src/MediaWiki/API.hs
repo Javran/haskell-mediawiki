@@ -29,7 +29,6 @@ import MediaWiki.Util.Fetch as Fetch
 import Codec.MIME.Type
 
 import MediaWiki.API.Query.SiteInfo.Import as SI
-import MediaWiki.API.Action.Login.Import as Login
 
 import Data.Maybe
 import Data.Text (unpack)
@@ -114,7 +113,7 @@ mkQueryAction q qr =
 -- presently allow HTTP Auth to happen in conjunction with the Wiki
 -- login.
 loginWiki :: URLString -> String -> String -> IO (Maybe LoginResponse)
-loginWiki url usr pwd = webPostXml Login.stringXml Nothing url "login" req
+loginWiki url usr pwd = webPostXml fromStringXml Nothing url "login" req
   where
     req = emptyXmlRequest (Login (emptyLogin usr pwd))
 
