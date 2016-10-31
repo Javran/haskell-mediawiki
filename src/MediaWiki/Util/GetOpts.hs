@@ -24,7 +24,7 @@
 -- A Haskell port of GNU's getopt library
 --
 
-module Util.GetOpts
+module MediaWiki.Util.GetOpts
     ( module System.Console.GetOpt
     , getOpt2           -- :: ArgOrder (a->a)
                         -- -> [OptDescr (a->a)]

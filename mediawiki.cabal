@@ -17,9 +17,9 @@ build-type: Simple
 extra-source-files: README
                     examples/ListCat.hs
                     examples/LinksTo.hs
-                    examples/Util/GetOpts.hs
 
 library
+    hs-source-dirs:  src
     Exposed-Modules: MediaWiki.API.Types,
                      MediaWiki.API.Output,
                      MediaWiki.API,
@@ -112,23 +112,38 @@ library
                      MediaWiki.Util.Fetch,
                      MediaWiki.Util.Codec.Percent,
                      MediaWiki.Util.Codec.URLEncoder
-   Ghc-Options:    -Wall -O2
-   Build-Depends:  base >= 3 && < 5, xml, HTTP >= 3001, network, mime >= 0.4, utf8-string, text, network-uri, http-client, http-client-tls, http-types, bytestring
+                   , MediaWiki.Util.GetOpts
+                   , MediaWiki.Example.LinksTo
+                   , MediaWiki.Example.ListCat
+                   , MediaWiki.Main
 
-executable main {
-  Build-Depends:   mediawiki, base >= 3 && < 5, xml, HTTP >= 3001, network, mime >= 0.4, utf8-string, text, network-uri, http-client, http-client-tls, http-types, bytestring
+   Ghc-Options:    -Wall -O2
+   Build-Depends:  base >= 3 && < 5
+                 , xml
+                 , HTTP
+                 , network
+                 , mime >= 0.4
+                 , utf8-string
+                 , text
+                 , network-uri
+                 , http-client
+                 , http-client-tls
+                 , http-types
+                 , bytestring
+                 , pretty
+
+executable main
+  Build-Depends:   mediawiki, base >= 3 && < 5
   Main-is:         Main.hs
   Ghc-options:     -Wall
-}
 
-executable listCat {
-  Build-Depends:   mediawiki, base >= 3 && < 5, xml, HTTP >= 3001, network, mime >= 0.4, utf8-string, pretty, text, network-uri, http-client, http-client-tls, http-types, bytestring
+executable listCat
+  Build-Depends:   mediawiki, base >= 3 && < 5
   Main-is:         examples/ListCat.hs
   Ghc-options:     -Wall -iexamples
-}
 
-executable linksTo {
-  Build-Depends:   mediawiki, base >= 4, xml, HTTP >= 3001, network, mime >= 0.4, utf8-string, pretty, text, network-uri, http-client, http-client-tls, http-types, bytestring
+
+executable linksTo
+  Build-Depends:   mediawiki, base >= 4
   Main-is:         examples/LinksTo.hs
   Ghc-options:     -Wall -iexamples
-}
