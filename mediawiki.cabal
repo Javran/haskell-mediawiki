@@ -110,7 +110,6 @@ library
                      MediaWiki.API.Action.ExpandTemplates,
                      MediaWiki.API.Action.ExpandTemplates.Import,
                      MediaWiki.Util.Fetch,
-                     MediaWiki.Util.Fetch2,
                      MediaWiki.Util.Codec.Percent,
                      MediaWiki.Util.Codec.URLEncoder
    Ghc-Options:    -Wall -O2

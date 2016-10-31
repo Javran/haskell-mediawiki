@@ -1,27 +1,17 @@
---------------------------------------------------------------------
--- |
--- Module    : MediaWiki.Util.Fetch
--- Copyright : (c) Sigbjorn Finne, 2008
--- License   : BSD3
---
--- Maintainer: Sigbjorn Finne <sof@forkIO.com>
--- Stability : provisional
--- Portability: so-so
---
--- Simple GET\/de-ref of URLs; abstracting out networking backend\/package.
---
+{-# LANGUAGE OverloadedStrings #-}
 module MediaWiki.Util.Fetch
-       ( readContentsURL
-       , postContentsURL
-       , AuthUser(..)
-       , nullAuthUser
-       , URLString
-       ) where
+  ( readContentsURL
+  , postContentsURL
+  , AuthUser (..)
+  , nullAuthUser
+  ) where
 
---import Network.Curl
-import Network.Browser
-import Network.HTTP
-import Network.URI
+import Network.HTTP.Types
+import Network.HTTP.Client
+import Network.HTTP.Client.TLS (tlsManagerSettings)
+import qualified Data.ByteString.Lazy.Char8 as LBS
+import qualified Data.ByteString.Char8 as BS
+import Data.String
 
 type URLString = String
 
@@ -39,67 +29,14 @@ nullAuthUser = AuthUser
 
 readContentsURL :: URLString -> IO String
 readContentsURL u = do
-  req <-
-    case parseURI u of
-      Nothing -> fail ("ill-formed URL: " ++ u)
-      Just ur -> return (defaultGETRequest ur)
-    -- don't like doing this, but HTTP is awfully chatty re: cookie handling..
-  let nullHandler _ = return ()
-  (_u, resp) <- browse $ setOutHandler nullHandler >> request req
-  case rspCode resp of
-    (2,_,_) -> return (rspBody resp)
-    _ -> fail ("Failed reading URL " ++ show u ++ " code: " ++ show (rspCode resp))
-
-{- Curl version:
-readContentsURL :: URLString -> IO String
-readContentsURL u = do
-  let opts = [ CurlFollowLocation True
-	     ]
-  (_,xs) <- curlGetString u opts
-  return xs
--}
-
-readUserContentsURL :: Maybe AuthUser -> Bool -> Bool -> URLString -> [(String,String)] -> IO ([(String,String)], String)
-readUserContentsURL mbU doRedir isHead us hdrs = do -- readContentsURL u
-  let hs =
-       case parseHeaders $ map (\ (x,y) -> x++": " ++ y) (addDefaultHeaders 0 hdrs) of
-         Left{} -> []
-	 Right xs -> xs
-  req0 <-
-    case parseURI us of
-      Nothing -> fail ("ill-formed URL: " ++ us)
-      Just ur -> return (defaultGETRequest ur)
-    -- don't like doing this, but HTTP is awfully chatty re: cookie handling..
-  let req = insertHeaderIfMissing HdrHost (authority (rqURI req0)) $
-              req0{ rqMethod=if isHead then HEAD else GET
-	          , rqHeaders= hs
-		  , rqURI = (rqURI req0){uriScheme="",uriAuthority=Nothing}
-	          }
-  let nullHandler _ = return ()
-  (u, resp) <- browse $ do
-     setOutHandler nullHandler
-     case mbU of
-       Nothing -> return ()
-       Just usr -> do
-         setAllowRedirects doRedir
-         setAllowBasicAuth True
-         setAuthorityGen (\ _ _ -> return (Just (authUserName usr,authUserPass usr)))
-
---                  setAllowBasicAuth True
---		  setAuthorityGen (\ _ _ -> return (Just (authUserName usr,authUserPass usr)))
-{-
-                  addAuthority AuthBasic{ auUsername = userName usr
-                                        , auPassword = userPass usr
-                                        , auRealm    = ""
-                                        , auSite     = nullURI{uriPath="/"}
-                                        }
--}
-     request req
-  case rspCode resp of
-    (2,_,_) -> return (map toP (rspHeaders resp), rspBody resp)
-    (3,_,_) | not doRedir -> return (map toP (rspHeaders resp), rspBody resp)
-    _ -> fail ("Failed reading URL " ++ show u ++ " code: " ++ show (rspCode resp))
-
+    mgr <- newManager tlsManagerSettings
+    req <- parseRequest u
+    resp <- httpLbs req mgr
+    let st = responseStatus resp
+    if st == ok200
+      -- TODO: quick and dirty, will be text in future.
+      then return (LBS.unpack . responseBody $ resp)
+      else error $ "error with status code: " ++ show (statusCode st)
 
 postContentsURL :: Maybe AuthUser
                 -> URLString
@@ -108,71 +45,26 @@ postContentsURL :: Maybe AuthUser
 		-> String
 		-> IO ([Cookie],[(String,String)], String)
 postContentsURL mbU u hdrs csIn body = do
-  let hs =
-       case parseHeaders $ map (\ (x,y) -> x++": " ++ y) (addDefaultHeaders  (length body) hdrs) of
-         Left{} -> []
-	 Right xs -> xs
-  req0 <-
-    case parseURI u of
-      Nothing -> fail ("ill-formed URL: " ++ u)
-      Just ur -> return (defaultGETRequest ur)
-  let req = insertHeaderIfMissing HdrHost (authority (rqURI req0)) $
-              req0{ rqMethod=POST
-                  , rqBody=body
-		  , rqHeaders= hs
-		  , rqURI = (rqURI req0){uriScheme="",uriAuthority=Nothing}
-	          }
---  print req -- ,body)
-  let nullHandler _ = return ()
-  ((_,rsp),cs) <- browse $ do
-     setOutHandler nullHandler
-     setAllowRedirects True
-     setCookies csIn
-     case mbU of
-       Nothing -> return ()
-       Just usr -> do
-         setAllowBasicAuth True
-         setAuthorityGen (\ _ _ -> return (Just (authUserName usr,authUserPass usr)))
-
-     v <- request req
-     ls <- getCookies
-     return (v,ls)
-  case rspCode rsp of
-    (2,_,_) -> return (cs,map toP (rspHeaders rsp), rspBody rsp)
-    x -> fail ("POST failed - code: " ++ show x ++ ", URL: " ++ u ++ show (rspBody rsp))
-
-toP :: Header -> (String, String)
-toP (Header k v) = (show k, v)
-
-addDefaultHeaders :: Int -> [(String,String)] -> [(String,String)]
-addDefaultHeaders clen hs =
-  addIfMiss "User-Agent" "hs-twitter" $
-  addIfMiss "Content-Length"  (show clen) hs
- where
-  addIfMiss f v xs = maybe ((f,v):xs) (const xs) (lookup f xs)
-
-{- Curl versions:
-readUserContentsURL :: User -> URLString -> IO String
-readUserContentsURL u url = do
-  let opts = [ CurlHttpAuth [HttpAuthAny]
-             , CurlUserPwd (authUserName u ++
-	                    case authUserPass u of {"" -> ""; p -> ':':p })
-             , CurlFollowLocation True
-	     ]
-  (_,xs) <- curlGetString url opts
-  return xs
-
-postContentsURL :: URLString -> [(String,String)] -> String -> IO String
-postContentsURL u hdrs body = do
-  let opts = [ CurlCustomRequest "POST"
-             , CurlFollowLocation True
-	     , CurlPost True
-	     , CurlPostFields [body]
-	     , CurlHttpTransferDecoding False
-	     ] ++ [CurlHttpHeaders (map ( \ (x,y) -> (x ++ ':':y)) hdrs)]
-  rsp <- curlGetResponse u opts
-  case respStatus rsp `div` 100 of
-    2 -> return (respBody rsp)
-    x -> fail ("POST failed - code: " ++ show x ++ ", URL: " ++ u)
-
--}
+    mgr <- newManager tlsManagerSettings
+    req0 <- parseRequest u
+    let req1 = req0 { requestHeaders =
+                          requestHeaders req0
+                          ++ map (\(x,y) -> (fromString x, fromString y)) hdrs
+                    , method = "POST"
+                    , requestBody = fromString body
+                    , cookieJar = Just (createCookieJar csIn)
+                    }
+        req2 = case mbU of
+            Nothing -> req1
+            Just (AuthUser name pass) -> applyBasicAuth (fromString name) (fromString pass) req1
+    resp <- httpLbs req2 mgr
+    let st = responseStatus resp
+    if st == ok200
+      then do
+        let csOut = destroyCookieJar (responseCookieJar resp)
+        -- TODO: quick and dirty, will be text in future.
+        -- TODO: we know "show" uses "original" so that's fine
+        --       before we solve the problem of duplicating the dependency everywhere
+        --       I don't like to add any new ones if possible.
+        return (csOut, map (\(x,y) -> (show x,BS.unpack y)) . responseHeaders $ resp, LBS.unpack . responseBody $ resp)
+      else error $ "error with status code: " ++ show (statusCode st)
