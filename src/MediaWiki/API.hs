@@ -1,4 +1,7 @@
-{-# OPTIONS_GHC -cpp -XExistentialQuantification -XDeriveDataTypeable -XOverloadedStrings #-}
+{-# LANGUAGE
+    ExistentialQuantification
+  , OverloadedStrings
+  #-}
 --------------------------------------------------------------------
 -- |
 -- Module      : MediaWiki.API
@@ -14,9 +17,9 @@
 --
 --------------------------------------------------------------------
 module MediaWiki.API
-       ( module MediaWiki.API
-       , URLString
-       ) where
+  ( module MediaWiki.API
+  , URLString
+  ) where
 
 import MediaWiki.API.Base
 import MediaWiki.API.Types
@@ -41,70 +44,70 @@ import Control.Monad
 -- | @webGet url req@ issues a GET to a MediaWiki server, appending
 -- @api.php?@ followed by the request @req@ to the URL base @url@.
 webGet :: URLString -> Request -> IO String
-webGet url req = do
-  let url_q = url ++ "api.php?" ++ showRequest req
---  print url_q
-  readContentsURL url_q
+webGet url req = readContentsURL url_q
+  where
+    url_q = url ++ "api.php?" ++ showRequest req
 
 -- | @webGet mbUser url req@ issues a POST to a MediaWiki server, appending
 -- @api.php?@ followed by the request @req@ to the URL base @url@.
 webPost :: Maybe Fetch.AuthUser -> URLString -> String -> Request -> IO ([(String,String)], String)
 webPost mbUser url act req = do
-  let url_q  = url ++ "api.php?action="++act
-  let pload  = showRequest req
-  (_cookiesOut, hs, p) <-
-     postContentsURL mbUser
-                  url_q
-                  [ ("Content-Length", show $ length pload)
-		  , ("Content-Type",   unpack $ showMIMEType form_mime_ty)
-		  ]
-		  [{-no cookies..-}]
-		  pload
-  return (hs, p)
+    let url_q  = url ++ "api.php?action="++act
+        pload  = showRequest req
+    (_cookiesOut, hs, p) <-
+        postContentsURL
+            mbUser
+            url_q
+            [ ("Content-Type", unpack $ showMIMEType form_mime_ty) ]
+            [{-no cookies..-}]
+            pload
+    return (hs, p)
  where
   form_mime_ty = Application "x-www-form-urlencoded"
 
 webPostXml :: (String -> Either (String,[String]) a)
            -> Maybe Fetch.AuthUser
            -> URLString
-	   -> String
-	   -> Request
-	   -> IO (Maybe a)
+           -> String
+           -> Request
+           -> IO (Maybe a)
 webPostXml p mbUser url act req = do
-  (_hs,mb) <- webPost mbUser url act req
-  case mb of
-    "" -> return Nothing
-    ls -> do
-     case p ls of
-      Left (x,errs) ->
-         case parseError ls of
-	   Right e -> throwMWError e
-	   _ -> putStrLn (x ++ ':':' ':unlines errs) >> return Nothing
-      Right x  -> return (Just x)
+    (_hs,mb) <- webPost mbUser url act req
+    case mb of
+        "" -> return Nothing
+        ls ->
+          case p ls of
+              Left (x,errs) ->
+                case parseError ls of
+                    Right e -> throwMWError e
+                    _ -> putStrLn (x ++ ':':' ':unlines errs) >> return Nothing
+              Right x  -> return (Just x)
 
 webGetXml :: (String -> Either (String,[String]) a)
           -> URLString
-	  -> Request
-	  -> IO (Maybe a)
+          -> Request
+          -> IO (Maybe a)
 webGetXml p url req = do
-  ls <- webGet url req
-  case p ls of
-    Left (x,errs) ->
-         case parseError ls of
-	   Right e -> throwMWError e
-	   _ -> putStrLn (x ++ ':':' ':unlines errs) >> return Nothing
-    Right x  -> return (Just x)
+    ls <- webGet url req
+    case p ls of
+        Left (x,errs) ->
+            case parseError ls of
+                Right e -> throwMWError e
+                _ -> putStrLn (x ++ ':':' ':unlines errs) >> return Nothing
+        Right x  -> return (Just x)
 
 queryPage :: PageName -> QueryRequest
 queryPage pg = emptyQuery{quTitles=[pg]}
 
 mkQueryAction :: APIRequest a => QueryRequest -> a -> Action
 mkQueryAction q qr =
-  case queryKind qr of
-    QProp s -> Query q{quProps=(PropKind s):quProps q} (toReq qr)
-    QList s -> Query q{quLists=(ListKind s):quLists q} (toReq qr)
-    QMeta s -> Query q{quMetas=(MetaKind s):quMetas q} (toReq qr)
-    QGen  s -> Query q{quGenerator=(Just (GeneratorKind s))} (toReq qr)
+    case queryKind qr of
+        QProp s -> mkQuery q{quProps=PropKind s:quProps q}
+        QList s -> mkQuery q{quLists=ListKind s:quLists q}
+        QMeta s -> mkQuery q{quMetas=MetaKind s:quMetas q}
+        QGen  s -> mkQuery q{quGenerator=Just (GeneratorKind s)}
+  where
+    mkQuery q' = Query q' (toReq qr)
 
 -- | @loginWiki u usr pass@ logs in to MediaWiki install at @url@ as
 -- user @usr@ with password credentials @pass@. Notice that we don't
@@ -113,39 +116,37 @@ mkQueryAction q qr =
 loginWiki :: URLString -> String -> String -> IO (Maybe LoginResponse)
 loginWiki url usr pwd = webPostXml Login.stringXml Nothing url "login" req
   where
-   req = emptyXmlRequest (Login (emptyLogin usr pwd))
+    req = emptyXmlRequest (Login (emptyLogin usr pwd))
 
 queryInfo :: URLString -> PageName -> IO String
 queryInfo url pgName = webGet url req
   where
-   req = emptyXmlRequest (mkQueryAction (queryPage pgName) infoRequest)
+    req = emptyXmlRequest (mkQueryAction (queryPage pgName) infoRequest)
 
 querySiteIWInfo :: URLString -> IO (Maybe SiteInfoResponse)
 querySiteIWInfo url = webGetXml SI.stringXml url req
- where
-  req = emptyXmlRequest
-                 (mkQueryAction (queryPage "XP")
-		                siteInfoRequest{siProp=["interwikimap"]})
+  where
+    req = emptyXmlRequest
+            (mkQueryAction (queryPage "XP")
+             siteInfoRequest{siProp=["interwikimap"]})
 
 queryLangPage :: URLString -> PageName -> Maybe String -> IO String
 queryLangPage url pgName mb = webGet url req
   where
-   req = emptyXmlRequest
-                 (mkQueryAction (queryPage pgName)
-		                langLinksRequest{llContinueFrom=mb})
-
+    req = emptyXmlRequest
+            (mkQueryAction (queryPage pgName)
+             langLinksRequest{llContinueFrom=mb})
 
 parseError :: String -> Either (String,[{-Error msg-}String]) MediaWikiError
-parseError s = parseDoc xmlError s
+parseError = parseDoc xmlError
 
 xmlError :: Element -> Maybe MediaWikiError
 xmlError e = do
   guard (elName e == nsName "api")
-  let es1 = children e
-  p  <- pNode "error" es1
+  p  <- pNode "error" (children e)
   return mwError{ mwErrorCode = fromMaybe "" $ pAttr "code" p
                 , mwErrorInfo = fromMaybe "" $ pAttr "info" p
-		}
+                }
 
 -- MW exceptions/errors:
 
@@ -156,10 +157,10 @@ data MediaWikiError
      } deriving ( Typeable )
 
 mwError :: MediaWikiError
-mwError = MediaWikiError{mwErrorCode="",mwErrorInfo=""}
+mwError = MediaWikiError "" ""
 
 data SomeMWException = forall e . Exception e => SomeMWException e
-    deriving Typeable
+  deriving Typeable
 
 instance Show SomeMWException where
     show (SomeMWException e) = show e
@@ -175,28 +176,25 @@ mwFromException x = do
     cast a
 
 instance Exception MediaWikiError where
-  toException = mwToException
-  fromException = mwFromException
+    toException = mwToException
+    fromException = mwFromException
 
 throwMWError :: MediaWikiError -> IO a
-throwMWError e = throwIO e
+throwMWError = throwIO
 
 catchMW :: IO a -> (MediaWikiError -> IO a) -> IO a
-catchMW f hdlr =
-  CE.catch f
-           (\ e1 -> hdlr e1)
+catchMW = CE.catch
 
 handleMW :: (MediaWikiError -> IO a) -> IO a -> IO a
 handleMW h e = catchMW e h
 
 tryMW :: IO a -> IO (Either MediaWikiError a)
-tryMW f = handleMW (\ x -> return (Left x)) (f >>= return.Right)
-
+tryMW f = handleMW (return . Left) (Right <$> f)
 
 instance Show MediaWikiError where
-  show x = unlines (
-   [ "MediaWiki error:"
-   , ""
-   , " Code: " ++ mwErrorCode x
-   , " Info: " ++ mwErrorInfo x
-   ])
+    show x = unlines
+               [ "MediaWiki error:"
+               , ""
+               , " Code: " ++ mwErrorCode x
+               , " Info: " ++ mwErrorInfo x
+               ]

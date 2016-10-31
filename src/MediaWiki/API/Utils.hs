@@ -12,10 +12,10 @@
 -- MediaWiki API internal utility functions.
 -- 
 --------------------------------------------------------------------
-module MediaWiki.API.Utils 
-       ( module MediaWiki.API.Utils
-       , fromMaybe
-       ) where
+module MediaWiki.API.Utils
+  ( module MediaWiki.API.Utils
+  , fromMaybe
+  ) where
 
 import Text.XML.Light as XML
 import Data.Maybe
@@ -24,40 +24,42 @@ import Control.Monad
 
 import MediaWiki.Util.Codec.URLEncoder ( encodeString )
 
-pNodes       :: String -> [XML.Element] -> [XML.Element]
-pNodes x es   = filter ((nsName x ==) . elName) es
+pNodes :: String -> [XML.Element] -> [XML.Element]
+pNodes x = filter ((n ==) . elName)
+  where
+    n = nsName x
 
-pNode        :: String -> [XML.Element] -> Maybe XML.Element
-pNode x es    = listToMaybe (pNodes x es)
+pNode :: String -> [XML.Element] -> Maybe XML.Element
+pNode x es = listToMaybe (pNodes x es)
 
-pLeaf        :: String -> [XML.Element] -> Maybe String
-pLeaf x es    = strContent `fmap` pNode x es
+pLeaf :: String -> [XML.Element] -> Maybe String
+pLeaf x es = strContent <$> pNode x es
 
-pAttr        :: String -> XML.Element -> Maybe String
-pAttr x e     = lookup (nsName x) [ (k,v) | Attr k v <- elAttribs e ]
+pAttr :: String -> XML.Element -> Maybe String
+pAttr x e = lookup (nsName x) [ (k,v) | Attr k v <- elAttribs e ]
 
-pMany        :: String -> (XML.Element -> Maybe a) -> [XML.Element] -> [a]
-pMany p f es  = mapMaybe f (pNodes p es)
+pMany :: String -> (XML.Element -> Maybe a) -> [XML.Element] -> [a]
+pMany p f = mapMaybe f . pNodes p
 
-children     :: XML.Element -> [XML.Element]
-children e    = onlyElems (elContent e)
+children :: XML.Element -> [XML.Element]
+children e = onlyElems (elContent e)
 
 nsName :: String -> QName
 nsName x = QName{qName=x,qURI=Nothing,qPrefix=Nothing}
 
 without :: [String] -> [XML.Attr] -> [XML.Attr]
-without xs as = filter (\ a -> not (attrKey a `elem` qxs)) as
- where
-  qxs = map nsName xs
+without xs = filter (\ a -> attrKey a `notElem` qxs)
+  where
+    qxs = map nsName xs
 
 parseDoc :: (Element -> Maybe a) -> String -> Either (String,[{-error msg-}String]) a
-parseDoc f s = 
-  case parseXMLDoc s of
-    Nothing -> Left (s, ["not valid XML content"])
-    Just d  ->
-      case f d of
-        Nothing -> Left (s,["unexpected XML response"])
-	Just x  -> Right x
+parseDoc f s =
+    case parseXMLDoc s of
+        Nothing -> Left (s, ["not valid XML content"])
+        Just d  ->
+            case f d of
+                Nothing -> Left (s,["unexpected XML response"])
+                Just x  -> Right x
 
 xmlContinue :: String -> String -> Element -> Maybe String
 xmlContinue tgName atName e = do
@@ -73,10 +75,10 @@ mbDef _ v = v
 readMb :: Read a => String -> Maybe a
 readMb x = case reads x of
              ((v,_):_) -> Just v
-	     _ -> Nothing
+             _ -> Nothing
 
 piped :: [String] -> String
-piped xs = intercalate "|" xs
+piped = intercalate "|"
 
 opt :: String -> String -> Maybe (String,String)
 opt a b = Just (a, encodeString b)
@@ -90,5 +92,4 @@ opt1 _ [] = Nothing
 opt1 a b = Just (a,encodeString $ piped b)
 
 mbOpt :: String -> (a -> String) -> Maybe a -> Maybe (String,String)
-mbOpt  _ _ Nothing = Nothing
-mbOpt tg f (Just x) = Just (tg,encodeString $ f x)
+mbOpt tg f = fmap (\x -> (tg,encodeString $ f x))

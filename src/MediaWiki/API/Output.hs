@@ -10,7 +10,7 @@
 -- Portability: portable
 --
 -- Serializing MediaWiki API types
--- 
+--
 --------------------------------------------------------------------
 module MediaWiki.API.Output where
 
@@ -23,7 +23,7 @@ import Data.List
 import Data.Maybe
 
 showRequest :: Request -> String
-showRequest req = 
+showRequest req =
   join (showAction (reqAction req) : showMaxLag (reqMaxLag req) (showFormat (reqFormat req)))
 
 showMaxLag :: Maybe Int -> String -> [String]
@@ -43,17 +43,17 @@ showFormat f = field "format" $ isFormatted (formatFormatted f) $
  where
   isFormatted False xs = xs
   isFormatted _     xs = xs++"fm"
-  
+
 toReq :: APIRequest a => a -> [String]
 toReq x =
- case catMaybes $ showReq x of
-   [] -> []
-   xs -> map showP xs
- where
-  showP (a,b) = a ++ '=':b
+    case catMaybes $ showReq x of
+        [] -> []
+        xs -> map showP xs
+  where
+    showP (a,b) = a ++ '=':b
 
 showQueryRequestKind :: QueryRequestKind -> [String]
-showQueryRequestKind r = 
+showQueryRequestKind r =
  case r of
    InfoProp p -> toReq p
    RevisionsProp p -> toReq p
@@ -87,44 +87,34 @@ showQueryRequestKind r =
    DeletedRevsProp      p -> toReq p
    UsersProp            p -> toReq p
    RandomProp           p -> toReq p
- 
 
 showAction :: Action -> String
 showAction act = join $
   case act of
     Sitematrix -> [field "action" "sitematrix"]
-    Login l    -> (field "action" "login"): (toReq l)
+    Login l    -> field "action" "login": toReq l
     Logout     -> [field "action" "logout"]
-    Query q qr -> (field "action" "query") : (showQuery q) ++ qr
-    ExpandTemplates et -> (field "action" "expandtemplates") : (showExpandTemplates et)
-    Parse pt -> (field "action" "parse") : (showParseRequest pt)
-    OpenSearch os ->  (field "action" "opensearch") : (showOpenSearch os)
-    FeedWatch f -> (field "action" "feedwatchlist") : (showFeedWatch f)
-    Help h -> (field "action" "help") : (showHelpRequest h)
-    ParamInfo pin ->  (field "action" "paraminfo") : (showParamInfoRequest pin)
-    Unblock r -> (field "action" "unblock") : toReq r
-    Watch   r -> (field "action" "watch") : toReq r
-    EmailUser r -> (field "action" "emailuser") : toReq r
-    Edit      r -> (field "action" "edit") : toReq r
-    Move      r -> (field "action" "move") : toReq r
-    Block     r -> (field "action" "block") : toReq r
-    Protect   r -> (field "action" "protect") : toReq r
-    Undelete  r -> (field "action" "undelete") : toReq r
-    Delete    r -> (field "action" "delete") : toReq r
-    Rollback  r -> (field "action" "rollback") : toReq r
-    OtherAction  at vs -> (field "action" at) : (map showValueName vs)
-
-{-
-showLoginRequest :: LoginRequest -> [String]
-showLoginRequest l = catMaybes 
-  [ Just $ field "name" (lgName l)
-  , Just $ field "password" (lgPassword l)
-  , fieldMb "version" id (lgDomain l)
-  ]
--}
+    Query q qr -> field "action" "query" : showQuery q ++ qr
+    ExpandTemplates et -> field "action" "expandtemplates" : showExpandTemplates et
+    Parse pt -> field "action" "parse" : showParseRequest pt
+    OpenSearch os -> field "action" "opensearch" : showOpenSearch os
+    FeedWatch f -> field "action" "feedwatchlist" : showFeedWatch f
+    Help h -> field "action" "help" : showHelpRequest h
+    ParamInfo pin -> field "action" "paraminfo" : showParamInfoRequest pin
+    Unblock r -> field "action" "unblock" : toReq r
+    Watch   r -> field "action" "watch" : toReq r
+    EmailUser r -> field "action" "emailuser" : toReq r
+    Edit      r -> field "action" "edit" : toReq r
+    Move      r -> field "action" "move" : toReq r
+    Block     r -> field "action" "block" : toReq r
+    Protect   r -> field "action" "protect" : toReq r
+    Undelete  r -> field "action" "undelete" : toReq r
+    Delete    r -> field "action" "delete" : toReq r
+    Rollback  r -> field "action" "rollback" : toReq r
+    OtherAction  at vs -> field "action" at : map showValueName vs
 
 showHelpRequest :: HelpRequest -> [String]
-showHelpRequest h = 
+showHelpRequest h =
   maybeToList (fieldMb "version" showBool (helpVersion h))
 
 showQuery :: QueryRequest -> [String]
@@ -140,22 +130,22 @@ showQuery q = catMaybes
   , fieldMb  "indexpageids" showBool           (quIndexPageIds q)
   ]
  where
-  fList t ls = fieldList t "|" ls
+  fList t = fieldList t "|"
 
 showExpandTemplates :: ExpandTemplatesRequest -> [String]
 showExpandTemplates et = catMaybes
   [ fieldMb "title" id (etTitle et)
   , Just $ field "text" (etText et)
   ]
-  
+
 showPropKind :: PropKind -> String
-showPropKind pk = prKind pk
+showPropKind = prKind
 
 showListKind :: ListKind -> String
-showListKind lk = liKind lk
+showListKind = liKind
 
 showMetaKind :: MetaKind -> String
-showMetaKind mk = meKind mk
+showMetaKind = meKind
 
 showParseRequest :: ParseRequest -> [String]
 showParseRequest p = catMaybes
@@ -164,28 +154,28 @@ showParseRequest p = catMaybes
   , fieldMb "page" id (paPage p)
   , fieldList "prop" "|" (paProp p)
   ]
-  
+
 showOpenSearch :: OpenSearchRequest -> [String]
 showOpenSearch o = catMaybes
   [ Just $ field "search" (osSearch o)
   , fieldMb "limit" show (osLimit o)
   ]
-  
+
 showFeedWatch :: FeedWatchListRequest -> [String]
 showFeedWatch f = catMaybes
  [ Just $ field "feedformat" (if feAsAtom f then "atom" else "rss")
  , fieldMb "hours" show (feHours f)
- , if feAllRev f then (Just $ field  "allrev" "") else Nothing
+ , if feAllRev f then Just (field  "allrev" "") else Nothing
  ]
- 
+
 showParamInfoRequest :: ParamInfoRequest -> [String]
 showParamInfoRequest p = catMaybes
  [ fieldList "modules" "," (paModules p)
  , fieldList "querymodules" "|" (paQueryModules p)
  ]
- 
+
 showGeneratorKind :: GeneratorKind -> String
-showGeneratorKind gk = genKind gk
+showGeneratorKind = genKind
 
 showValueName :: ValueName -> String
 showValueName (n,v) = field n v
@@ -196,7 +186,7 @@ showBool _    = "false"
 
 join :: [String] -> String
 join [] = ""
-join xs = concat (intersperse "&" xs)
+join xs = intercalate "&" xs
 
 field :: String -> String -> String
 field a b = a ++ '=':b
@@ -208,5 +198,3 @@ fieldMb n f (Just x) = Just (field n (f x))
 fieldList :: String -> String -> [String] -> Maybe String
 fieldList _ _ [] = Nothing
 fieldList n s xs = Just (field n (intercalate (getEncodedString s) xs))
-
-

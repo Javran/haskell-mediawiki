@@ -13,21 +13,20 @@ import Control.Monad
 import Data.Maybe
 
 stringXml :: String -> Either (String,[{-Error msg-}String]) AllCategoriesResponse
-stringXml s = parseDoc xml s
+stringXml = parseDoc xml
 
 xml :: Element -> Maybe AllCategoriesResponse
 xml e = do
-  guard (elName e == nsName "api")
-  let es1 = children e
-  p  <- pNode "query" es1
-  let es = children p
-  ps <- fmap (mapMaybe xmlCII) (fmap children $ pNode "allcategories" es)
-  let cont = pNode "query-continue" es1 >>= xmlContinue "allcategories" "acfrom"
-  return emptyAllCategoriesResponse{acCategories=ps,acContinue=cont}
+    guard (elName e == nsName "api")
+    let es1 = children e
+    p  <- pNode "query" es1
+    let es = children p
+    ps <- (mapMaybe xmlCII . children) <$> pNode "allcategories" es
+    let cont = pNode "query-continue" es1 >>= xmlContinue "allcategories" "acfrom"
+    return emptyAllCategoriesResponse{acCategories=ps,acContinue=cont}
 
 xmlCII :: Element -> Maybe CategoryInfo
 xmlCII e = do
-  c <- xmlCI emptyPageTitle "c" e
-  let tit = strContent e
-  return c{ciPage=(ciPage c){pgTitle=tit}}
-  
+    c <- xmlCI emptyPageTitle "c" e
+    let tit = strContent e
+    return c{ciPage=(ciPage c){pgTitle=tit}}

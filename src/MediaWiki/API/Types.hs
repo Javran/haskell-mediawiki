@@ -10,7 +10,7 @@
 -- Portability: portable
 --
 -- Basic MediaWiki API types
--- 
+--
 --------------------------------------------------------------------
 module MediaWiki.API.Types where
 
@@ -43,20 +43,20 @@ nullTimestamp = ""
 nullUser :: UserName
 nullUser = ""
 
-data PageTitle 
+data PageTitle
  = PageTitle { pgNS    :: NamespaceID
-             , pgTitle :: Title 
-	     , pgMbId  :: Maybe PageID
-	     , pgMissing :: Bool
-	     }
+             , pgTitle :: Title
+             , pgMbId  :: Maybe PageID
+             , pgMissing :: Bool
+             }
 
 emptyPageTitle :: PageTitle
 emptyPageTitle
  = PageTitle { pgNS    = mainNamespace
              , pgTitle = ""
-	     , pgMbId  = Nothing
-	     , pgMissing = False
-	     }
+             , pgMbId  = Nothing
+             , pgMissing = False
+             }
 
 mainNamespace :: NamespaceID
 mainNamespace  = "0"
@@ -68,7 +68,7 @@ ns_IMAGE :: NamespaceID
 ns_IMAGE = "6"
 
 data Format
- = Format 
+ = Format
      { formatKind      :: FormatKind
      , formatFormatted :: Bool
      }
@@ -81,7 +81,7 @@ xmlFormat = emptyFormat{formatKind=FormatXML, formatFormatted=False}
 
 data FormatKind
  = FormatJSON
- | FormatPHP 
+ | FormatPHP
  | FormatWDDX
  | FormatXML
  | FormatYAML
@@ -166,10 +166,10 @@ type Title  = String   -- Q: what kind of encoding/escaping can be assumed here?
 type PageID = String   -- numeric ID, so arguably wrong Haskell type.
 type RevisionID = String -- ditto.
 
-newtype PropKind 
+newtype PropKind
  = PropKind { prKind :: String }
     {- Not deemed worthy to try to enumerate them all.
-    -- Three major reasons: 
+    -- Three major reasons:
     --    - supportd properties are likely to evolve with MW API.
     --    - fields support subsets of the type, so using a union type
     --      for these is imprecise.
@@ -193,12 +193,12 @@ class APIRequest a where
   showReq    :: a -> [Maybe (String,String)]
   isPostable :: a -> Bool
   isPostable _ = False
-  
+
   queryKind :: a -> QueryKind
   queryKind _ = QProp ""
 
 
-data QueryKind 
+data QueryKind
  = QProp String | QMeta String | QList String | QGen String
    deriving ( Eq )
 
@@ -227,15 +227,3 @@ emptyQuery = QueryRequest
      , quFollowRedirects = Nothing
      , quIndexPageIds    = Nothing
      }
-{-
-data MetaKindProp
- = SiteInfoProp
- | UserInfoProp
- | AllMessagesProp
- | ExpandTemplatesProp
- | ParseProp
- | OpenSearchProp
- | FeedWatchlistProp
- | HelpProp
- | ParamInfoProp
- -}
