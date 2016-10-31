@@ -16,13 +16,14 @@ module MediaWiki.API.Action.Parse.Import where
 
 import MediaWiki.API.Types
 import MediaWiki.API.Utils
-import MediaWiki.API.Action.Parse
+import MediaWiki.API.Action
 
 import Text.XML.Light.Types
 import Text.XML.Light.Proc   ( strContent )
 
 import Control.Monad
 import Data.Maybe
+import Data.Default
 
 stringXml :: String -> Either (String,[{-Error msg-}String]) ParseResponse
 stringXml s = parseDoc xml s
@@ -42,7 +43,7 @@ xml e = do
   let im  = fmap (mapMaybe xmlIm) (fmap children $ pNode "images" es)
   let ex  = fmap (mapMaybe xmlEx) (fmap children $ pNode "externallinks" es)
   let se  = fmap (mapMaybe xmlSe) (fmap children $ pNode "sections" es)
-  return emptyParseResponse
+  return def
            { parText = txt
 	   , parRevId = rev
 	   , parLangLinks = ll

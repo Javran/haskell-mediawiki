@@ -10,9 +10,9 @@
 -- Portability: portable
 --
 -- Collector module of types used by the MediaWiki API
--- 
+--
 --------------------------------------------------------------------
-module MediaWiki.API.Base 
+module MediaWiki.API.Base
 	( module MediaWiki.API.Base
 	, module MediaWiki.API.Query.AllCategories
 	, module MediaWiki.API.Query.AllImages
@@ -46,23 +46,7 @@ module MediaWiki.API.Base
 	, module MediaWiki.API.Query.Users
 	, module MediaWiki.API.Query.WatchList
 
-	, module MediaWiki.API.Action.Login
-	, module MediaWiki.API.Action.ParamInfo
-	, module MediaWiki.API.Action.Parse
-	, module MediaWiki.API.Action.OpenSearch
-	, module MediaWiki.API.Action.FeedWatchlist
-	, module MediaWiki.API.Action.ExpandTemplates
-        , module MediaWiki.API.Action.Sitematrix
-        , module MediaWiki.API.Action.Unblock
-        , module MediaWiki.API.Action.Watch
-        , module MediaWiki.API.Action.EmailUser
-        , module MediaWiki.API.Action.Edit
-        , module MediaWiki.API.Action.Move
-        , module MediaWiki.API.Action.Block
-        , module MediaWiki.API.Action.Protect
-        , module MediaWiki.API.Action.Undelete
-        , module MediaWiki.API.Action.Delete
-        , module MediaWiki.API.Action.Rollback
+        , module MediaWiki.API.Action
 
 	) where
 
@@ -100,23 +84,7 @@ import MediaWiki.API.Query.UserInfo
 import MediaWiki.API.Query.Users
 import MediaWiki.API.Query.WatchList
 
-import MediaWiki.API.Action.Login
-import MediaWiki.API.Action.ParamInfo
-import MediaWiki.API.Action.Parse
-import MediaWiki.API.Action.OpenSearch
-import MediaWiki.API.Action.FeedWatchlist
-import MediaWiki.API.Action.ExpandTemplates
-import MediaWiki.API.Action.Sitematrix
-import MediaWiki.API.Action.Unblock
-import MediaWiki.API.Action.Watch
-import MediaWiki.API.Action.EmailUser
-import MediaWiki.API.Action.Edit
-import MediaWiki.API.Action.Move
-import MediaWiki.API.Action.Block
-import MediaWiki.API.Action.Protect
-import MediaWiki.API.Action.Undelete
-import MediaWiki.API.Action.Delete
-import MediaWiki.API.Action.Rollback
+import MediaWiki.API.Action
 
 -- | Type collecting together the main parts of a MediaWiki API request.
 data Request
@@ -127,7 +95,7 @@ data Request
     }
 
 emptyRequest :: Action -> Format -> Request
-emptyRequest a f 
+emptyRequest a f
  = Request
     { reqAction = a
     , reqFormat = f
@@ -292,7 +260,7 @@ data QueryRequestKind
  | RandomProp           RandomPagesRequest
 
 qKind :: QueryRequestKind -> QueryKind
-qKind q = 
+qKind q =
  case q of
    InfoProp k -> queryKind k
    RevisionsProp k -> queryKind k
@@ -326,4 +294,3 @@ qKind q =
    DeletedRevsProp      k -> queryKind k
    UsersProp            k -> queryKind k
    RandomProp           k -> queryKind k
- 

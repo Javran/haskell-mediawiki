@@ -16,7 +16,7 @@ module MediaWiki.API.Action.Login.Import where
 
 import MediaWiki.API.Types
 import MediaWiki.API.Utils
-import MediaWiki.API.Action.Login
+import MediaWiki.API.Action
 
 import Text.XML.Light.Types
 

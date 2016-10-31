@@ -16,12 +16,13 @@ module MediaWiki.API.Action.ExpandTemplates.Import where
 
 --import MediaWiki.API.Types
 import MediaWiki.API.Utils
-import MediaWiki.API.Action.ExpandTemplates
+import MediaWiki.API.Action
 
 import Text.XML.Light.Types
 import Text.XML.Light.Proc   ( strContent )
 
 import Control.Monad
+import Data.Default
 
 stringXml :: String -> Either (String,[{-Error msg-}String]) ExpandTemplatesResponse
 stringXml s = parseDoc xml s
@@ -32,7 +33,7 @@ xml e = do
   let es1 = children e
   p  <- pNode "expandtemplates" es1
   let xm = fmap strContent $ pNode "parsetree" es1
-  return emptyExpandTemplatesResponse
+  return def
       { etExpandedText = strContent p
       , etExpandedXml  = xm
       }

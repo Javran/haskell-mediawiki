@@ -89,26 +89,10 @@ library
                      MediaWiki.API.Query.Users.Import,
                      MediaWiki.API.Query.WatchList,
                      MediaWiki.API.Query.WatchList.Import,
-                     MediaWiki.API.Action.Sitematrix,
-                     MediaWiki.API.Action.Login,
                      MediaWiki.API.Action.Login.Import,
-                     MediaWiki.API.Action.ParamInfo,
-                     MediaWiki.API.Action.Parse,
                      MediaWiki.API.Action.Parse.Import,
-                     MediaWiki.API.Action.Rollback,
-                     MediaWiki.API.Action.Delete,
-                     MediaWiki.API.Action.Undelete,
-                     MediaWiki.API.Action.Protect,
-                     MediaWiki.API.Action.Block,
-                     MediaWiki.API.Action.Unblock,
-                     MediaWiki.API.Action.Move,
-                     MediaWiki.API.Action.Edit,
-                     MediaWiki.API.Action.EmailUser,
-                     MediaWiki.API.Action.Watch,
-                     MediaWiki.API.Action.OpenSearch,
-                     MediaWiki.API.Action.FeedWatchlist,
-                     MediaWiki.API.Action.ExpandTemplates,
-                     MediaWiki.API.Action.ExpandTemplates.Import,
+                     MediaWiki.API.Action.ExpandTemplates.Import
+                   , MediaWiki.API.Action
                      MediaWiki.Util.Fetch,
                      MediaWiki.Util.Codec.Percent,
                      MediaWiki.Util.Codec.URLEncoder
@@ -129,6 +113,7 @@ library
                  , http-types
                  , bytestring
                  , pretty
+                 , data-default
 
 executable main
   Build-Depends:   mediawiki, base >= 3 && < 5
