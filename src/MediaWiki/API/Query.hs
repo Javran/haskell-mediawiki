@@ -69,7 +69,7 @@ instance FromXml CategoryInfoResponse where
         let es1 = children e
         p  <- pNode "query" es1
         let es = children p
-        ps <- fmap (mapMaybe xmlPage) (fmap children $ pNode "pages" es)
+        ps <- fmap (mapMaybe xmlPage . children) $ pNode "pages" es
         return def {ciPages=ps}
       where
         xmlPage :: Element -> Maybe CategoryInfo
@@ -233,7 +233,7 @@ instance FromXml ImageInfoResponse where
         let es1 = children e
         p  <- pNode "query" es1 >>= (pNode "pages").children
         let es = children p
-        ps <- fmap (mapMaybe xmlPage) (fmap children $ pNode "page" es)
+        ps <- fmap (mapMaybe xmlPage . children) $ pNode "page" es
         let cont = pNode "query-continue" es1 >>= xmlContinue "imageinfo" "iistart"
         return def {iiPages=ps,iiContinue=cont}
       where
@@ -243,7 +243,7 @@ instance FromXml ImageInfoResponse where
             let es = children e
             p <- pNode "imageinfo" es
             let es1 = children p
-            cs <- fmap (mapMaybe (xmlImageInfo "ii")) (fmap children $ pNode "ii" es1)
+            cs <- fmap (mapMaybe (xmlImageInfo "ii") . children) $ pNode "ii" es1
             let ns     = fromMaybe "0" $ pAttr "ns" p
             let tit    = fromMaybe ""  $ pAttr "title" p
             let mbpid  = pAttr "pageid" p
@@ -254,29 +254,18 @@ instance FromXml ImageInfoResponse where
 xmlImageInfo :: String -> Element -> Maybe ImageInfo
 xmlImageInfo tg p = do
    guard (elName p == nsName tg)
-   let ts = fromMaybe nullTimestamp (pAttr "timestamp" p)
-   let us = fromMaybe nullUser (pAttr "user" p)
-   let wi = pAttr "width" p >>= readI
-   let he = pAttr "height" p >>= readI
-   let si = pAttr "size" p >>= readI
-   let ur = pAttr "url" p
-   let co = pAttr "comment" p
-   let sh = pAttr "sha1" p
-   let ar = pAttr "archivename" p
-   let bi = pAttr "bitdepth" p >>= readI
-   let mi = pAttr "mime" p
    return def
-    { iiTimestamp = ts
-    , iiUser      = us
-    , iiWidth     = wi
-    , iiHeight    = he
-    , iiSize      = si
-    , iiURL       = ur
-    , iiComment   = co
-    , iiSHA1      = sh
-    , iiArchive   = ar
-    , iiBitDepth  = bi
-    , iiMime      = mi
+    { iiTimestamp = fromMaybe nullTimestamp (pAttr "timestamp" p)
+    , iiUser      = fromMaybe nullUser (pAttr "user" p)
+    , iiWidth     = pAttr "width" p >>= readI
+    , iiHeight    = pAttr "height" p >>= readI
+    , iiSize      = pAttr "size" p >>= readI
+    , iiURL       = pAttr "url" p
+    , iiComment   = pAttr "comment" p
+    , iiSHA1      = pAttr "sha1" p
+    , iiArchive   = pAttr "archivename" p
+    , iiBitDepth  = pAttr "bitdepth" p >>= readI
+    , iiMime      = pAttr "mime" p
     }
   where
     readI :: String -> Maybe Int
@@ -343,6 +332,6 @@ instance FromXml AllImagesResponse where
         let es1 = children e
         p  <- pNode "query" es1
         let es = children p
-        ps <- fmap (mapMaybe (xmlImageInfo "img")) (fmap children $ pNode "allimages" es)
+        ps <- fmap (mapMaybe (xmlImageInfo "img") . children) $ pNode "allimages" es
         let cont = pNode "query-continue" es1 >>= xmlContinue "allimages" "aifrom"
         return def {aiImages=ps,aiContinue=cont}
