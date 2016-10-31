@@ -7,21 +7,19 @@
 -- Maintainer: Sigbjorn Finne <sof@forkIO.com>
 -- Stability : provisional
 -- Portability: so-so
--- 
+--
 -- Simple GET\/de-ref of URLs; abstracting out networking backend\/package.
 --
-module MediaWiki.Util.Fetch 
+module MediaWiki.Util.Fetch
        ( readContentsURL
        , readUserContentsURL
-       
        , postContentsURL
-
---       , URLString
        , AuthUser(..)
        , nullAuthUser
        , Cookie
+       , URLString
        ) where
-       
+
 --import Network.Curl
 import Network.Browser
 import Network.HTTP
@@ -30,20 +28,20 @@ import Network.URI
 type URLString = String
 
 data AuthUser
- = AuthUser 
-     { authUserName :: String
-     , authUserPass :: String
-     }
+  = AuthUser
+    { authUserName :: String
+    , authUserPass :: String
+    }
 
 nullAuthUser :: AuthUser
 nullAuthUser = AuthUser
-            { authUserName = ""
-	    , authUserPass = ""
-	    }
+    { authUserName = ""
+    , authUserPass = ""
+    }
 
 readContentsURL :: URLString -> IO String
 readContentsURL u = do
-  req <- 
+  req <-
     case parseURI u of
       Nothing -> fail ("ill-formed URL: " ++ u)
       Just ur -> return (defaultGETRequest ur)
@@ -65,11 +63,11 @@ readContentsURL u = do
 
 readUserContentsURL :: Maybe AuthUser -> Bool -> Bool -> URLString -> [(String,String)] -> IO ([(String,String)], String)
 readUserContentsURL mbU doRedir isHead us hdrs = do -- readContentsURL u
-  let hs = 
+  let hs =
        case parseHeaders $ map (\ (x,y) -> x++": " ++ y) (addDefaultHeaders 0 hdrs) of
          Left{} -> []
 	 Right xs -> xs
-  req0 <- 
+  req0 <-
     case parseURI us of
       Nothing -> fail ("ill-formed URL: " ++ us)
       Just ur -> return (defaultGETRequest ur)
@@ -80,7 +78,7 @@ readUserContentsURL mbU doRedir isHead us hdrs = do -- readContentsURL u
 		  , rqURI = (rqURI req0){uriScheme="",uriAuthority=Nothing}
 	          }
   let nullHandler _ = return ()
-  (u, resp) <- browse $ do 
+  (u, resp) <- browse $ do
      setOutHandler nullHandler
      case mbU of
        Nothing -> return ()
@@ -112,11 +110,11 @@ postContentsURL :: Maybe AuthUser
 		-> String
 		-> IO ([Cookie],[(String,String)], String)
 postContentsURL mbU u hdrs csIn body = do
-  let hs = 
+  let hs =
        case parseHeaders $ map (\ (x,y) -> x++": " ++ y) (addDefaultHeaders  (length body) hdrs) of
          Left{} -> []
 	 Right xs -> xs
-  req0 <- 
+  req0 <-
     case parseURI u of
       Nothing -> fail ("ill-formed URL: " ++ u)
       Just ur -> return (defaultGETRequest ur)
@@ -137,7 +135,7 @@ postContentsURL mbU u hdrs csIn body = do
        Just usr -> do
          setAllowBasicAuth True
          setAuthorityGen (\ _ _ -> return (Just (authUserName usr,authUserPass usr)))
-		   
+
      v <- request req
      ls <- getCookies
      return (v,ls)
@@ -149,7 +147,7 @@ toP :: Header -> (String, String)
 toP (Header k v) = (show k, v)
 
 addDefaultHeaders :: Int -> [(String,String)] -> [(String,String)]
-addDefaultHeaders clen hs = 
+addDefaultHeaders clen hs =
   addIfMiss "User-Agent" "hs-twitter" $
   addIfMiss "Content-Length"  (show clen) hs
  where
@@ -159,13 +157,13 @@ addDefaultHeaders clen hs =
 readUserContentsURL :: User -> URLString -> IO String
 readUserContentsURL u url = do
   let opts = [ CurlHttpAuth [HttpAuthAny]
-             , CurlUserPwd (authUserName u ++ 
+             , CurlUserPwd (authUserName u ++
 	                    case authUserPass u of {"" -> ""; p -> ':':p })
              , CurlFollowLocation True
-	     ] 
+	     ]
   (_,xs) <- curlGetString url opts
   return xs
-     
+
 postContentsURL :: URLString -> [(String,String)] -> String -> IO String
 postContentsURL u hdrs body = do
   let opts = [ CurlCustomRequest "POST"

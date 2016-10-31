@@ -22,7 +22,8 @@ import MediaWiki.API.Base
 import MediaWiki.API.Types
 import MediaWiki.API.Output
 
-import MediaWiki.Util.Fetch as Fetch
+import MediaWiki.Util.Fetch as Fetch hiding (URLString, readContentsURL)
+import qualified MediaWiki.Util.Fetch2 as Fetch2
 import Codec.MIME.Type
 
 import MediaWiki.API.Query.SiteInfo.Import as SI
@@ -44,7 +45,7 @@ webGet :: URLString -> Request -> IO String
 webGet url req = do
   let url_q = url ++ "api.php?" ++ showRequest req
 --  print url_q
-  readContentsURL url_q
+  Fetch2.readContentsURL url_q
 
 -- | @webGet mbUser url req@ issues a POST to a MediaWiki server, appending
 -- @api.php?@ followed by the request @req@ to the URL base @url@.

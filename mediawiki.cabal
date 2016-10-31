@@ -110,25 +110,26 @@ library
                      MediaWiki.API.Action.ExpandTemplates,
                      MediaWiki.API.Action.ExpandTemplates.Import,
                      MediaWiki.Util.Fetch,
+                     MediaWiki.Util.Fetch2,
                      MediaWiki.Util.Codec.Percent,
                      MediaWiki.Util.Codec.URLEncoder
    Ghc-Options:    -Wall -O2
-   Build-Depends:  base >= 3 && < 5, xml, HTTP >= 3001, network, mime >= 0.4, utf8-string, text, network-uri
+   Build-Depends:  base >= 3 && < 5, xml, HTTP >= 3001, network, mime >= 0.4, utf8-string, text, network-uri, http-client, http-client-tls, http-types, bytestring
 
 executable main {
-  Build-Depends:   mediawiki, base >= 3 && < 5, xml, HTTP >= 3001, network, mime >= 0.4, utf8-string, text, network-uri
+  Build-Depends:   mediawiki, base >= 3 && < 5, xml, HTTP >= 3001, network, mime >= 0.4, utf8-string, text, network-uri, http-client, http-client-tls, http-types, bytestring
   Main-is:         Main.hs
   Ghc-options:     -Wall
 }
 
 executable listCat {
-  Build-Depends:   mediawiki, base >= 3 && < 5, xml, HTTP >= 3001, network, mime >= 0.4, utf8-string, pretty, text, network-uri
+  Build-Depends:   mediawiki, base >= 3 && < 5, xml, HTTP >= 3001, network, mime >= 0.4, utf8-string, pretty, text, network-uri, http-client, http-client-tls, http-types, bytestring
   Main-is:         examples/ListCat.hs
   Ghc-options:     -Wall -iexamples
 }
 
 executable linksTo {
-  Build-Depends:   mediawiki, base >= 4, xml, HTTP >= 3001, network, mime >= 0.4, utf8-string, pretty, text, network-uri
+  Build-Depends:   mediawiki, base >= 4, xml, HTTP >= 3001, network, mime >= 0.4, utf8-string, pretty, text, network-uri, http-client, http-client-tls, http-types, bytestring
   Main-is:         examples/LinksTo.hs
   Ghc-options:     -Wall -iexamples
 }
