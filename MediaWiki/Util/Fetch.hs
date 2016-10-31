@@ -12,11 +12,9 @@
 --
 module MediaWiki.Util.Fetch
        ( readContentsURL
-       , readUserContentsURL
        , postContentsURL
        , AuthUser(..)
        , nullAuthUser
-       , Cookie
        , URLString
        ) where
 

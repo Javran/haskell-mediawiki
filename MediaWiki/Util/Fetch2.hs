@@ -1,6 +1,5 @@
 module MediaWiki.Util.Fetch2
   ( readContentsURL
-  , readUserContentsURL
   , postContentsURL
   , AuthUser (..)
   , nullAuthUser
@@ -22,12 +21,9 @@ readContentsURL u = do
     resp <- httpLbs req mgr
     let st = responseStatus resp
     if st == ok200
-      -- quick and dirty
+      -- TODO: quick and dirty, will be text in future.
       then return (LBS.unpack . responseBody $ resp)
       else error $ "error with status code: " ++ show (statusCode st)
-
-readUserContentsURL :: Maybe AuthUser -> Bool -> Bool -> URLString -> [(String,String)] -> IO ([(String,String)], String)
-readUserContentsURL = undefined
 
 postContentsURL :: Maybe AuthUser
                 -> URLString
