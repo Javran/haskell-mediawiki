@@ -14,8 +14,6 @@
 --------------------------------------------------------------------
 module MediaWiki.API.Base
 	( module MediaWiki.API.Base
-	, module MediaWiki.API.Query.AllCategories
-	, module MediaWiki.API.Query.AllImages
 	, module MediaWiki.API.Query.AllLinks
 	, module MediaWiki.API.Query.AllMessages
 	, module MediaWiki.API.Query.AllPages
@@ -23,13 +21,11 @@ module MediaWiki.API.Base
 	, module MediaWiki.API.Query.BackLinks
 	, module MediaWiki.API.Query.Blocks
 	, module MediaWiki.API.Query.Categories
-	, module MediaWiki.API.Query.CategoryInfo
 	, module MediaWiki.API.Query.CategoryMembers
 	, module MediaWiki.API.Query.DeletedRevisions
 	, module MediaWiki.API.Query.EmbeddedIn
 	, module MediaWiki.API.Query.ExternalLinks
 	, module MediaWiki.API.Query.ExternalURLUsage
-	, module MediaWiki.API.Query.ImageInfo
 	, module MediaWiki.API.Query.Images
 	, module MediaWiki.API.Query.ImageUsage
 	, module MediaWiki.API.Query.Info
@@ -46,13 +42,14 @@ module MediaWiki.API.Base
 	, module MediaWiki.API.Query.Users
 	, module MediaWiki.API.Query.WatchList
 
+	, module MediaWiki.API.Query
         , module MediaWiki.API.Action
 
 	) where
 
 import MediaWiki.API.Types
-import MediaWiki.API.Query.AllCategories
-import MediaWiki.API.Query.AllImages
+
+import MediaWiki.API.Query
 import MediaWiki.API.Query.AllLinks
 import MediaWiki.API.Query.AllMessages
 import MediaWiki.API.Query.AllPages
@@ -60,13 +57,11 @@ import MediaWiki.API.Query.AllUsers
 import MediaWiki.API.Query.BackLinks
 import MediaWiki.API.Query.Blocks
 import MediaWiki.API.Query.Categories
-import MediaWiki.API.Query.CategoryInfo
 import MediaWiki.API.Query.CategoryMembers
 import MediaWiki.API.Query.DeletedRevisions
 import MediaWiki.API.Query.EmbeddedIn
 import MediaWiki.API.Query.ExternalLinks
 import MediaWiki.API.Query.ExternalURLUsage
-import MediaWiki.API.Query.ImageInfo
 import MediaWiki.API.Query.Images
 import MediaWiki.API.Query.ImageUsage
 import MediaWiki.API.Query.Info
@@ -85,6 +80,7 @@ import MediaWiki.API.Query.Users
 import MediaWiki.API.Query.WatchList
 
 import MediaWiki.API.Action
+import Data.Default
 
 -- | Type collecting together the main parts of a MediaWiki API request.
 data Request
@@ -145,7 +141,7 @@ imagesRequest :: ImagesRequest
 imagesRequest = emptyImagesRequest
 
 imageInfoRequest :: ImageInfoRequest
-imageInfoRequest = emptyImageInfoRequest
+imageInfoRequest = def
 
 templatesRequest :: TemplatesRequest
 templatesRequest = emptyTemplatesRequest
@@ -154,10 +150,10 @@ categoriesRequest :: CategoriesRequest
 categoriesRequest = emptyCategoriesRequest
 
 allCategoriesRequest :: AllCategoriesRequest
-allCategoriesRequest = emptyAllCategoriesRequest
+allCategoriesRequest = def
 
 allImagesRequest :: AllImagesRequest
-allImagesRequest = emptyAllImagesRequest
+allImagesRequest = def
 
 allLinksRequest :: AllLinksRequest
 allLinksRequest  = emptyAllLinksRequest
@@ -181,7 +177,7 @@ imageUsageRequest :: ImageUsageRequest
 imageUsageRequest = emptyImageUsageRequest
 
 categoryInfoRequest :: CategoryInfoRequest
-categoryInfoRequest = emptyCategoryInfoRequest
+categoryInfoRequest = def
 
 categoryMembersRequest :: CategoryMembersRequest
 categoryMembersRequest = emptyCategoryMembersRequest

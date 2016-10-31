@@ -4,7 +4,7 @@ module MediaWiki.API.Action
   , DeleteRequest(..)
   , UndeleteRequest(..)
   , LoginRequest(..)
-  , emptyLogin
+  , emptyLogin -- TODO: emptyXXX -> mkXXX
   , LoginResponse(..)
   , ParamInfoRequest(..)
   , ParamInfoResponse(..)

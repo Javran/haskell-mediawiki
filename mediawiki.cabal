@@ -25,10 +25,6 @@ library
                      MediaWiki.API,
                      MediaWiki.API.Base,
                      MediaWiki.API.Utils,
-                     MediaWiki.API.Query.AllCategories,
-                     MediaWiki.API.Query.AllCategories.Import,
-                     MediaWiki.API.Query.AllImages,
-                     MediaWiki.API.Query.AllImages.Import,
                      MediaWiki.API.Query.AllLinks,
                      MediaWiki.API.Query.AllLinks.Import,
                      MediaWiki.API.Query.AllMessages,
@@ -43,8 +39,6 @@ library
                      MediaWiki.API.Query.Blocks.Import,
                      MediaWiki.API.Query.Categories,
                      MediaWiki.API.Query.Categories.Import,
-                     MediaWiki.API.Query.CategoryInfo,
-                     MediaWiki.API.Query.CategoryInfo.Import,
                      MediaWiki.API.Query.CategoryMembers,
                      MediaWiki.API.Query.CategoryMembers.Import,
                      MediaWiki.API.Query.DeletedRevisions,
@@ -55,8 +49,6 @@ library
                      MediaWiki.API.Query.ExternalLinks.Import,
                      MediaWiki.API.Query.ExternalURLUsage
                      MediaWiki.API.Query.ExternalURLUsage.Import,
-                     MediaWiki.API.Query.ImageInfo,
-                     MediaWiki.API.Query.ImageInfo.Import,
                      MediaWiki.API.Query.Images,
                      MediaWiki.API.Query.Images.Import,
                      MediaWiki.API.Query.ImageUsage,
@@ -89,10 +81,11 @@ library
                      MediaWiki.API.Query.Users.Import,
                      MediaWiki.API.Query.WatchList,
                      MediaWiki.API.Query.WatchList.Import
+                   , MediaWiki.API.Query
                    , MediaWiki.API.Action
-                     MediaWiki.Util.Fetch,
-                     MediaWiki.Util.Codec.Percent,
-                     MediaWiki.Util.Codec.URLEncoder
+                   , MediaWiki.Util.Fetch
+                   , MediaWiki.Util.Codec.Percent
+                   , MediaWiki.Util.Codec.URLEncoder
                    , MediaWiki.Util.GetOpts
                    , MediaWiki.Example.LinksTo
                    , MediaWiki.Example.ListCat
