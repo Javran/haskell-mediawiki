@@ -120,8 +120,6 @@ library
    Ghc-Options:    -Wall -O2
    Build-Depends:  base >= 3 && < 5
                  , xml
-                 , HTTP
-                 , network
                  , mime >= 0.4
                  , utf8-string
                  , text
