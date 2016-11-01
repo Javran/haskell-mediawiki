@@ -69,35 +69,30 @@ instance FromXml CategoryInfoResponse where
         let es1 = children e
         p  <- pNode "query" es1
         let es = children p
-        ps <- fmap (mapMaybe xmlPage . children) $ pNode "pages" es
+        ps <- (mapMaybe xmlPage . children) <$> pNode "pages" es
         return def {ciPages=ps}
       where
         xmlPage :: Element -> Maybe CategoryInfo
-        xmlPage e = do
-            guard (elName e == nsName "page")
-            let ns     = fromMaybe "0" $ pAttr "ns" e
-            let tit    = fromMaybe ""  $ pAttr "title" e
-            let pid    = pAttr "pageid" e
+        xmlPage e' = do
+            guard (elName e' == nsName "page")
+            let ns     = fromMaybe "0" $ pAttr "ns" e'
+            let tit    = fromMaybe ""  $ pAttr "title" e'
+            let pid    = pAttr "pageid" e'
             let pg     = emptyPageTitle{pgNS=ns,pgTitle=tit,pgMbId=pid}
-            let cs = mapMaybe (xmlCategoryInfo pg "categoryinfo") (children e)
+            let cs = mapMaybe (xmlCategoryInfo pg "categoryinfo") (children e')
             listToMaybe cs
 
 xmlCategoryInfo :: PageTitle -> String -> Element -> Maybe CategoryInfo
 xmlCategoryInfo pg tg e = do
    guard (elName e == nsName tg)
-   let sz  = pAttr "size" e >>= readMb
-   let psz = pAttr "pagesize" e >>= readMb
-   let fi  = pAttr "files" e >>= readMb
-   let su  = pAttr "subcats" e >>= readMb
-   let hi  = isJust (pAttr "hidden" e)
    return def
-               { ciPage = pg
-	       , ciSize = sz
-	       , ciPageSize = psz
-	       , ciFiles = fi
-	       , ciSubCats = su
-	       , ciHidden = hi
-	       }
+       { ciPage = pg
+       , ciSize = pAttr "size" e >>= readMb
+       , ciPageSize = pAttr "pagesize" e >>= readMb
+       , ciFiles = pAttr "files" e >>= readMb
+       , ciSubCats = pAttr "subcats" e >>= readMb
+       , ciHidden = isJust (pAttr "hidden" e)
+       }
 
 data AllCategoriesRequest
   = AllCategoriesRequest
@@ -151,9 +146,9 @@ instance FromXml AllCategoriesResponse where
         return def {acCategories=ps,acContinue=cont}
       where
         xmlCII :: Element -> Maybe CategoryInfo
-        xmlCII e = do
-            c <- xmlCategoryInfo emptyPageTitle "c" e
-            let tit = strContent e
+        xmlCII e' = do
+            c <- xmlCategoryInfo emptyPageTitle "c" e'
+            let tit = strContent e'
             return c{ciPage=(ciPage c){pgTitle=tit}}
 
 data ImageInfo
@@ -231,24 +226,24 @@ instance FromXml ImageInfoResponse where
     fromXml e = do
         guard (elName e == nsName "api")
         let es1 = children e
-        p  <- pNode "query" es1 >>= (pNode "pages").children
+        p  <- pNode "query" es1 >>= pNode "pages" . children
         let es = children p
-        ps <- fmap (mapMaybe xmlPage . children) $ pNode "page" es
+        ps <- (mapMaybe xmlPage . children) <$> pNode "page" es
         let cont = pNode "query-continue" es1 >>= xmlContinue "imageinfo" "iistart"
         return def {iiPages=ps,iiContinue=cont}
       where
         xmlPage :: Element -> Maybe (PageTitle,[ImageInfo])
-        xmlPage e = do
-            guard (elName e == nsName "page")
-            let es = children e
+        xmlPage e' = do
+            guard (elName e' == nsName "page")
+            let es = children e'
             p <- pNode "imageinfo" es
             let es1 = children p
-            cs <- fmap (mapMaybe (xmlImageInfo "ii") . children) $ pNode "ii" es1
+            cs <- (mapMaybe (xmlImageInfo "ii") . children) <$> pNode "ii" es1
             let ns     = fromMaybe "0" $ pAttr "ns" p
             let tit    = fromMaybe ""  $ pAttr "title" p
             let mbpid  = pAttr "pageid" p
-            let miss   = isJust (pAttr "missing" p)
-            let rep    = pAttr "imagerepository" p
+            -- let miss   = isJust (pAttr "missing" p)
+            -- let rep    = pAttr "imagerepository" p
             return (emptyPageTitle{pgNS=ns,pgTitle=tit,pgMbId=mbpid}, cs)
 
 xmlImageInfo :: String -> Element -> Maybe ImageInfo
@@ -332,6 +327,6 @@ instance FromXml AllImagesResponse where
         let es1 = children e
         p  <- pNode "query" es1
         let es = children p
-        ps <- fmap (mapMaybe (xmlImageInfo "img") . children) $ pNode "allimages" es
+        ps <- (mapMaybe (xmlImageInfo "img") . children) <$> pNode "allimages" es
         let cont = pNode "query-continue" es1 >>= xmlContinue "allimages" "aifrom"
         return def {aiImages=ps,aiContinue=cont}
