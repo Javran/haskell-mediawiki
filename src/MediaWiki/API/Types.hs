@@ -202,7 +202,7 @@ class APIRequest a where
 
 class FromXml a where
     fromXml :: Element -> Maybe a
-    fromStringXml :: String -> Either (String,[{-Error msg-}String]) a
+    fromStringXml :: String -> ParseResult a
     fromStringXml = parseDoc fromXml
 
 data QueryKind

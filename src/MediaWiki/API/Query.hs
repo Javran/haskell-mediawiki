@@ -12,6 +12,9 @@ module MediaWiki.API.Query
 
   , AllImagesRequest(..)
   , AllImagesResponse(..)
+
+  , AllLinksRequest(..)
+  , AllLinksResponse(..)
   ) where
 
 import Data.Default
@@ -330,3 +333,68 @@ instance FromXml AllImagesResponse where
         ps <- (mapMaybe (xmlImageInfo "img") . children) <$> pNode "allimages" es
         let cont = pNode "query-continue" es1 >>= xmlContinue "allimages" "aifrom"
         return def {aiImages=ps,aiContinue=cont}
+
+data AllLinksRequest
+  = AllLinksRequest
+    { alContinueFrom :: Maybe String
+    , alFrom      :: Maybe PageName
+    , alPrefix    :: Maybe PageName
+    , alUnique    :: Bool
+    , alProp      :: [String]
+    , alNamespace :: Maybe NamespaceID
+    , alLimit     :: Maybe Int
+    }
+
+instance APIRequest AllLinksRequest where
+  queryKind _ = QList "alllinks"
+  showReq r  =
+      [ mbOpt "alcontinue" id (alContinueFrom r)
+      , mbOpt "alfrom" id (alFrom r)
+      , mbOpt "alprefix" id (alPrefix r)
+      , optB  "alunique" (alUnique r)
+      , opt1 "alprop" (alProp r)
+      , mbOpt "alnamespace" id (alNamespace r)
+      , mbOpt "allimit" show (alLimit r)
+   ]
+
+
+instance Default AllLinksRequest where
+    def = AllLinksRequest
+        { alContinueFrom = Nothing
+        , alFrom      = Nothing
+        , alPrefix    = Nothing
+        , alUnique    = False
+        , alProp      = []
+        , alNamespace = Nothing
+        , alLimit     = Nothing
+        }
+
+data AllLinksResponse
+  = AllLinksResponse
+    { alLinks    :: [PageTitle]
+    , alContinue :: Maybe String
+    }
+
+instance Default AllLinksResponse where
+    def = AllLinksResponse
+        { alLinks    = []
+        , alContinue = Nothing
+        }
+
+instance FromXml AllLinksResponse where
+    fromXml e = do
+        guard (elName e == nsName "api")
+        let es1 = children e
+        p  <- pNode "query" es1
+        let es = children p
+        ps <- fmap (mapMaybe xmlLink . children) (pNode "alllinks" es)
+        let cont = pNode "query-continue" es1 >>= xmlContinue "alllinks" "alcontinue"
+        return def {alLinks=ps,alContinue=cont}
+
+xmlLink :: Element -> Maybe PageTitle
+xmlLink e = do
+   guard (elName e == nsName "l")
+   let ns     = fromMaybe "0" $ pAttr "ns" e
+   let tit    = fromMaybe ""  $ pAttr "title" e
+   let pid    = pAttr "fromid" e
+   return emptyPageTitle{pgNS=ns,pgTitle=tit,pgMbId=pid}

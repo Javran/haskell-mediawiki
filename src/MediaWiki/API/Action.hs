@@ -409,7 +409,6 @@ instance Default ParseResponse where
         , parSections      = Nothing
         }
 
-
 instance FromXml ParseResponse where
     fromXml e = do
           guard (elName e == nsName "api")

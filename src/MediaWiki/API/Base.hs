@@ -156,7 +156,7 @@ allImagesRequest :: AllImagesRequest
 allImagesRequest = def
 
 allLinksRequest :: AllLinksRequest
-allLinksRequest  = emptyAllLinksRequest
+allLinksRequest  = def
 
 allMessagesRequest :: AllMessagesRequest
 allMessagesRequest = emptyAllMessagesRequest

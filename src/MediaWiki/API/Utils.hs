@@ -24,14 +24,20 @@ import Control.Monad
 
 import MediaWiki.Util.Codec.URLEncoder ( encodeString )
 
+type ParseErrorMsgs = [String]
+type ParseResult a = Either (String, ParseErrorMsgs) a
+
+-- select nodes base on element names
 pNodes :: String -> [XML.Element] -> [XML.Element]
 pNodes x = filter ((n ==) . elName)
   where
     n = nsName x
 
+-- select nodes base on element names, only the first hit returns
 pNode :: String -> [XML.Element] -> Maybe XML.Element
 pNode x es = listToMaybe (pNodes x es)
 
+-- same as pNode, but extract the string content
 pLeaf :: String -> [XML.Element] -> Maybe String
 pLeaf x es = strContent <$> pNode x es
 
@@ -45,14 +51,14 @@ children :: XML.Element -> [XML.Element]
 children e = onlyElems (elContent e)
 
 nsName :: String -> QName
-nsName x = QName{qName=x,qURI=Nothing,qPrefix=Nothing}
+nsName = unqual
 
 without :: [String] -> [XML.Attr] -> [XML.Attr]
 without xs = filter (\ a -> attrKey a `notElem` qxs)
   where
     qxs = map nsName xs
 
-parseDoc :: (Element -> Maybe a) -> String -> Either (String,[{-error msg-}String]) a
+parseDoc :: (Element -> Maybe a) -> String -> ParseResult a
 parseDoc f s =
     case parseXMLDoc s of
         Nothing -> Left (s, ["not valid XML content"])
