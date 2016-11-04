@@ -14,10 +14,6 @@
 --------------------------------------------------------------------
 module MediaWiki.API.Base
 	( module MediaWiki.API.Base
-	, module MediaWiki.API.Query.AllLinks
-	, module MediaWiki.API.Query.AllMessages
-	, module MediaWiki.API.Query.AllPages
-	, module MediaWiki.API.Query.AllUsers
 	, module MediaWiki.API.Query.BackLinks
 	, module MediaWiki.API.Query.Blocks
 	, module MediaWiki.API.Query.Categories
@@ -50,10 +46,6 @@ module MediaWiki.API.Base
 import MediaWiki.API.Types
 
 import MediaWiki.API.Query
-import MediaWiki.API.Query.AllLinks
-import MediaWiki.API.Query.AllMessages
-import MediaWiki.API.Query.AllPages
-import MediaWiki.API.Query.AllUsers
 import MediaWiki.API.Query.BackLinks
 import MediaWiki.API.Query.Blocks
 import MediaWiki.API.Query.Categories
@@ -159,13 +151,13 @@ allLinksRequest :: AllLinksRequest
 allLinksRequest  = def
 
 allMessagesRequest :: AllMessagesRequest
-allMessagesRequest = emptyAllMessagesRequest
+allMessagesRequest = def
 
 allPagesRequest :: AllPagesRequest
-allPagesRequest = emptyAllPagesRequest
+allPagesRequest = def
 
 allUsersRequest :: AllUsersRequest
-allUsersRequest = emptyAllUsersRequest
+allUsersRequest = def
 
 backLinksRequest :: BackLinksRequest
 backLinksRequest = emptyBackLinksRequest

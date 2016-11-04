@@ -15,6 +15,16 @@ module MediaWiki.API.Query
 
   , AllLinksRequest(..)
   , AllLinksResponse(..)
+
+  , AllMessagesRequest(..)
+  , AllMessagesResponse(..)
+  , MessageInfo(..)
+
+  , AllPagesRequest(..)
+  , AllPagesResponse(..)
+
+  , AllUsersRequest(..)
+  , AllUsersResponse(..)
   ) where
 
 import Data.Default
@@ -390,11 +400,215 @@ instance FromXml AllLinksResponse where
         ps <- fmap (mapMaybe xmlLink . children) (pNode "alllinks" es)
         let cont = pNode "query-continue" es1 >>= xmlContinue "alllinks" "alcontinue"
         return def {alLinks=ps,alContinue=cont}
+      where
+        xmlLink :: Element -> Maybe PageTitle
+        xmlLink e' = do
+            guard (elName e' == nsName "l")
+            let ns     = fromMaybe "0" $ pAttr "ns" e'
+            let tit    = fromMaybe ""  $ pAttr "title" e'
+            let pid    = pAttr "fromid" e'
+            return emptyPageTitle{pgNS=ns,pgTitle=tit,pgMbId=pid}
 
-xmlLink :: Element -> Maybe PageTitle
-xmlLink e = do
-   guard (elName e == nsName "l")
-   let ns     = fromMaybe "0" $ pAttr "ns" e
-   let tit    = fromMaybe ""  $ pAttr "title" e
-   let pid    = pAttr "fromid" e
-   return emptyPageTitle{pgNS=ns,pgTitle=tit,pgMbId=pid}
+data AllMessagesRequest
+  = AllMessagesRequest
+    { amMessages        :: [String]
+    , amFilter          :: Maybe String
+    , amLang            :: Maybe String
+    }
+
+instance APIRequest AllMessagesRequest where
+  queryKind _ = QMeta "allmessages"
+  showReq r =
+      [ opt1  "ammessages" (amMessages r)
+      , mbOpt "amfilter" id (amFilter r)
+      , mbOpt "amlang" id (amLang r)
+      ]
+
+instance Default AllMessagesRequest where
+    def = AllMessagesRequest
+        { amMessages = []
+        , amFilter   = Nothing
+        , amLang     = Nothing
+        }
+
+data AllMessagesResponse
+  = AllMessagesResponse
+    { amsgMessages :: [MessageInfo]
+    }
+
+instance Default AllMessagesResponse where
+    def = AllMessagesResponse
+        { amsgMessages = []
+        }
+
+instance FromXml AllMessagesResponse where
+    fromXml e2 = do
+        let e = e2
+        guard (elName e == nsName "api")
+        let es1 = children e
+        p  <- pNode "query" es1
+        let es = children p
+        ps <- fmap (mapMaybe xmlPage . children) (pNode "pages" es)
+        return def {amsgMessages=ps}
+      where
+        xmlPage :: Element -> Maybe MessageInfo
+        xmlPage e' = do
+            guard (elName e' == nsName "message")
+            let nm    = fromMaybe "" $ pAttr "name" e'
+            let mi    = isJust (pAttr "missing" e')
+            return def {msgiName=nm,msgiMissing=mi,msgiContent=strContent e'}
+
+data MessageInfo
+  = MessageInfo
+    { msgiName :: String
+    , msgiMissing :: Bool
+    , msgiContent :: String
+    }
+
+instance Default MessageInfo where
+    def = MessageInfo
+        { msgiName = ""
+        , msgiMissing = False
+        , msgiContent = ""
+        }
+
+data AllPagesRequest
+  = AllPagesRequest
+    { apFrom            :: Maybe PageName
+    , apPrefix          :: Maybe PageName
+    , apNamespace       :: NamespaceID
+    , apFilterRedir     :: Maybe WithRedirects
+    , apMinSize         :: Maybe Int
+    , apMaxSize         :: Maybe Int
+    , apProtTypeLevel   :: ([String],[String])
+    , apLimit           :: Maybe Int
+    , apDir             :: Maybe Direction
+    , apFilterLangLinks :: Maybe FilterLang
+    }
+
+instance APIRequest AllPagesRequest where
+    queryKind _ = QList "allpages"
+    showReq r =
+        [ mbOpt "apfrom" id (apFrom r)
+        , mbOpt "apprefix" id (apPrefix r)
+        , mbOpt  "apnamespace" id (Just $ apNamespace r)
+        , mbOpt "apfilterredir" id (apFilterRedir r)
+        , mbOpt "apminsize" show (apMinSize r)
+        , mbOpt "apmaxsize" show (apMaxSize r)
+        , mbOpt "apprtype"  (piped.fst) (Just $ apProtTypeLevel r)
+        , mbOpt "apprlevel" (piped.snd) (Just $ apProtTypeLevel r)
+        , mbOpt "aplimit" show (apLimit r)
+        , mbOpt "apdir"  (\ x -> if x==Up then "ascending" else "descending") (apDir r)
+        , mbOpt "apfilterlanglinks" id (apFilterLangLinks r)
+        ]
+
+instance Default AllPagesRequest where
+    def = AllPagesRequest
+        { apFrom            = Nothing
+        , apPrefix          = Nothing
+        , apNamespace       = mainNamespace
+        , apFilterRedir     = Nothing
+        , apMinSize         = Nothing
+        , apMaxSize         = Nothing
+        , apProtTypeLevel   = ([],[])
+        , apLimit           = Nothing
+        , apDir             = Nothing
+        , apFilterLangLinks = Nothing
+        }
+
+data AllPagesResponse
+  = AllPagesResponse
+    { apLinks    :: [PageTitle] -- seems to have evolved now (1.13) to PageInfo.
+    , apContinue :: Maybe String
+    }
+
+instance Default AllPagesResponse where
+    def = AllPagesResponse
+        { apLinks    = []
+        , apContinue = Nothing
+        }
+
+instance FromXml AllPagesResponse where
+    fromXml e = do
+        guard (elName e == nsName "api")
+        let es1 = children e
+        p  <- pNode "query" es1
+        let es = children p
+        ps <- fmap (mapMaybe xmlPage . children) $ pNode "pages" es
+        let cont = pNode "query-continue" es1 >>= xmlContinue "allpages" "gapfrom"
+        return def {apLinks=ps,apContinue=cont}
+      where
+        xmlPage :: Element -> Maybe PageTitle
+        xmlPage e' = do
+            guard (elName e' == nsName "page")
+            let ns     = fromMaybe "0" $ pAttr "ns" e'
+            let tit    = fromMaybe ""  $ pAttr "title" e'
+            let pid    = pAttr "pageid" e'
+            -- more to follow, I'm also seeing these with 1.13:
+            let tou    = pAttr "touched" e'
+            let las    = pAttr "lastrevid" e'
+            let views  = pAttr "counter" e'
+            let len    = pAttr "length" e'
+            return emptyPageTitle {pgNS=ns,pgTitle=tit,pgMbId=pid}
+
+data AllUsersRequest
+  = AllUsersRequest
+    { auFrom   :: Maybe UserName
+    , auPrefix :: Maybe UserName
+    , auGroup  :: Maybe GroupName
+    , auProp   :: [String]
+    , auLimit  :: Maybe Int
+    }
+
+instance APIRequest AllUsersRequest where
+    queryKind _ = QList "allusers"
+    showReq r =
+        [ mbOpt "aufrom" id (auFrom r)
+        , mbOpt "auprefix" id (auPrefix r)
+        , mbOpt "augroup" id (auGroup r)
+        , opt1  "auprop" (auProp r)
+        , mbOpt "aulimit" show (auLimit r)
+        ]
+
+instance Default AllUsersRequest where
+    def = AllUsersRequest
+        { auFrom   = Nothing
+        , auPrefix = Nothing
+        , auGroup  = Nothing
+        , auProp   = []
+        , auLimit  = Nothing
+        }
+
+data AllUsersResponse
+  = AllUsersResponse
+    { auUsers    :: [(UserName, Maybe Int, Maybe String)]
+    , auContinue :: Maybe String
+    }
+
+instance Default AllUsersResponse where
+    def = AllUsersResponse
+        { auUsers    = []
+        , auContinue = Nothing
+        }
+
+instance FromXml AllUsersResponse where
+    fromXml e = do
+        guard (elName e == nsName "api")
+        let es1 = children e
+        p  <- pNode "query" es1
+        let es = children p
+        ps <- fmap (mapMaybe xmlUser) (fmap children $ pNode "allusers" es)
+        let cont = pNode "query-continue" es1 >>= xmlContinue "allusers" "aufrom"
+        return def {auUsers=ps,auContinue=cont}
+      where
+        xmlUser :: Element -> Maybe (UserName,Maybe Int, Maybe String)
+        xmlUser e' = do
+            guard (elName e' == nsName "u")
+            let ns     = fromMaybe "0" $ pAttr "ns" e'
+            let nm     = fromMaybe ""  $ pAttr "name" e'
+            let ec     = pAttr "editcount" e' >>= \x ->
+                           case reads x of
+                               ((v,_):_) -> Just v
+                               _ -> Nothing
+            let grps   = pAttr "groups" e'
+            return (nm,ec,grps)
